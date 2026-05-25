@@ -1,5 +1,4 @@
-# WalletProject
+## WALLETPROJECT
 
 ### Resources
-
-https://github.com/alchemyplatform/ecdsa-node 
+https://github.com/alchemyplatform/ecdsa-node
