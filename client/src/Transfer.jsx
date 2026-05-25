@@ -1,24 +1,70 @@
 import { useState } from "react";
 import server from "./server";
+import * as secp from "ethereum-cryptography/secp256k1";
+import { keccak256 } from "ethereum-cryptography/keccak";
+import { utf8ToBytes, toHex, hexToBytes } from "ethereum-cryptography/utils";
 
 function Transfer({ address, setBalance }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
 
+  // PROJECT MODIFICATIONS
+  const [privateKey] = useState(() => {
+
+    const savedKey = localStorage.getItem("userPrivateKey");
+    if (savedKey) {
+        return hexToBytes(savedKey);
+      } else {
+        const newKey = secp.utils.randomPrivateKey();
+        const publicKey = secp.getPublicKey(newKey);
+
+        localStorage.setItem("userPrivateKey", toHex(newKey));
+        localStorage.setItem("userPublicKey", toHex(publicKey));
+        return newKey;
+      }
+  });
+
+  if (!localStorage.getItem("userPublicKey")){
+    const publicKey = secp.getPublicKey(privateKey);
+    localStorage.setItem("userPublicKey", toHex(publicKey));
+  }
+  
+  // PROJECT MODIFICATIONS
   const setValue = (setter) => (evt) => setter(evt.target.value);
 
   async function transfer(evt) {
     evt.preventDefault();
 
     try {
-      const {
-        data: { balance },
-      } = await server.post(`send`, {
+
+      // PROJECT MODIFICATIONS
+      const mensaje = {
         sender: address,
+        recipient: recipient,
         amount: parseInt(sendAmount),
-        recipient,
+      };
+
+      // Sign the message
+      const msgHash = keccak256(utf8ToBytes(JSON.stringify(mensaje)));
+      const [signature, recovery] = await secp.sign(msgHash, privateKey, {
+        recovered: true,
+        der: false
       });
-      setBalance(balance);
+
+      const response = await server.post(`send`, {
+        sender: address,
+        recipient: recipient,
+        amount: parseInt(sendAmount),
+        
+        signature: {
+          signature: toHex(signature), 
+          recovery: recovery                  
+        }
+      });
+
+      setBalance(response.data.balance);
+      // PROJECT MODIFICATIONS
+
     } catch (ex) {
       alert(ex.response.data.message);
     }

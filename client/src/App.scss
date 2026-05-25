@@ -84,3 +84,8 @@ input {
   display: flex;
   flex-direction: column;
 }
+
+.address {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
