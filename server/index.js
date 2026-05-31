@@ -17,14 +17,9 @@ const balances = {
 app.get("/balance/:address", (req, res) => {
   const { address } = req.params;
 
-  // PROJECT MODIFICATIONS
-  if (balances[address] === undefined) {
-    setInitialBalance(address);
-  }
+  setInitialBalance(address)
 
   const balance = balances[address] || 0;
-  // PROJECT MODIFICATIONS
-
   res.send({ balance });
 });
 
@@ -50,9 +45,9 @@ app.post("/send", (req, res) => {
   setInitialBalance(sender);
   setInitialBalance(recipient);
 
-  if (balances[sender] < amount) {
-    res.status(400).send({ message: "Not enough funds!" });
-  } else {
+  if (balances[sender] < amount || amount < 0) {
+    res.status(400).send({ message: "Not enough funds or not enough amount!" });
+  }else {
     balances[sender] -= amount;
     console.log("Sender balance after transfer: ", balances[sender]);
     console.log("Recipient balance before transfer: ", amount);
@@ -67,6 +62,6 @@ app.listen(port, () => {
 
 function setInitialBalance(address) {
   if (!balances[address]) {
-    balances[address] = 100;
+    balances[address] = 0;
   }
 }
